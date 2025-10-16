@@ -62,7 +62,7 @@
         })
         .then(buffer => {
           const workbook = XLSX.read(buffer, { type: 'array' });
-          console.log("Hojas en Excel:", workbook.SheetNames);
+          console.log("✅ Hojas encontradas:", workbook.SheetNames);
 
           Object.entries(hojas).forEach(([hojaNombre, contenedorId]) => {
             const contenedor = document.getElementById(contenedorId);
@@ -70,7 +70,7 @@
               console.error(`❌ Contenedor con id "${contenedorId}" NO encontrado en el DOM.`);
               return;
             }
-            contenedor.innerHTML = ''; // limpiar contenido previo
+            contenedor.innerHTML = '';
 
             if (!workbook.SheetNames.includes(hojaNombre)) {
               contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada en el archivo Excel.</div>`;
@@ -86,13 +86,18 @@
             }
 
             const headers = data[0];
-            let rows = data.slice(1).map(row => {
-              const newRow = [...row];
+            const rawRows = data.slice(1);
+            const validRows = rawRows.filter(row => Array.isArray(row));
+            if (validRows.length < rawRows.length) {
+              console.warn(`⚠️ [${hojaNombre}] Se ignoraron ${rawRows.length - validRows.length} filas mal formateadas.`);
+            }
+
+            let rows = validRows.map(row => {
+              const newRow = Array.from(row);
               while (newRow.length < headers.length) newRow.push("");
               return newRow;
             });
 
-            // Filtrar columnas vacías
             const activeCols = headers.map((_, i) => {
               return !rows.every(r => {
                 const val = r[i];
