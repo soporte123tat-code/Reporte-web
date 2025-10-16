@@ -56,109 +56,114 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    const excelUrl = 'https://raw.githubusercontent.com/soporte123tat-code/Reporte-web/main/Reporte_2025-10-09.xlsx';
+    document.addEventListener("DOMContentLoaded", function() {
+      const excelUrl = 'https://raw.githubusercontent.com/soporte123tat-code/Reporte-web/main/Reporte_2025-10-09.xlsx';
 
-    fetch(excelUrl)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.arrayBuffer();
-      })
-      .then(buffer => {
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        console.log("Hojas encontradas:", workbook.SheetNames);
+      fetch(excelUrl)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.arrayBuffer();
+        })
+        .then(buffer => {
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          console.log("Hojas encontradas:", workbook.SheetNames);
 
-        const hojas = { PRD: 'grid-prd', QAS: 'grid-qas', DEV: 'grid-dev' };
+          const hojas = { PRD: 'grid-prd', QAS: 'grid-qas', DEV: 'grid-dev' };
 
-        Object.entries(hojas).forEach(([hojaNombre, contenedorId]) => {
-          const contenedor = document.getElementById(contenedorId);
-          if (!contenedor) {
-            console.warn(`Contenedor con id "${contenedorId}" no encontrado en el DOM.`);
-            return;
-          }
-          contenedor.innerHTML = '';
-
-          const hoja = workbook.Sheets[hojaNombre];
-          if (!hoja) {
-            contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada.</div>`;
-            return;
-          }
-
-          let data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
-          if (!Array.isArray(data) || data.length < 2) {
-            contenedor.innerHTML = `<div class="alert alert-info">ℹ️ La hoja "${hojaNombre}" no tiene datos útiles.</div>`;
-            return;
-          }
-
-          const headers = data[0];
-          let rows = data.slice(1).map(row => {
-            const newRow = [...row];
-            while (newRow.length < headers.length) {
-              newRow.push("");
+          Object.entries(hojas).forEach(([hojaNombre, contenedorId]) => {
+            const contenedor = document.getElementById(contenedorId);
+            if (!contenedor) {
+              console.error(`❌ Contenedor con id "${contenedorId}" NO encontrado en el DOM.`);
+              return;
             }
-            return newRow;
-          });
+            contenedor.innerHTML = '';
 
-          // Filtrar columnas que estén completamente vacías
-          const activeCols = headers.map((_, i) => {
-            return !rows.every(r => {
-              const v = r[i];
-              return v === null || v === undefined || v === "";
-            });
-          });
-
-          const filteredHeaders = [];
-          const filteredRows = rows.map(() => []);
-
-          headers.forEach((h, i) => {
-            if (activeCols[i]) {
-              filteredHeaders.push(h || `Col_${i}`);
-              rows.forEach((r, rIndex) => {
-                filteredRows[rIndex].push(r[i]);
-              });
+            const hoja = workbook.Sheets[hojaNombre];
+            if (!hoja) {
+              contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada.</div>`;
+              return;
             }
-          });
 
-          if (filteredHeaders.length === 0) {
-            contenedor.innerHTML = `<div class="alert alert-info">ℹ️ No hay columnas con datos para mostrar en "${hojaNombre}".</div>`;
-            return;
-          }
+            let data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
+            if (!Array.isArray(data) || data.length < 2) {
+              contenedor.innerHTML = `<div class="alert alert-info">ℹ️ La hoja "${hojaNombre}" no tiene datos útiles.</div>`;
+              return;
+            }
 
-          const columns = filteredHeaders.map((h, idx) => ({
-            name: h,
-            id: `${hojaNombre}_col_${idx}`,
-            formatter: cell => cell ?? ""
-          }));
-
-          try {
-            new gridjs.Grid({
-              columns: columns,
-              data: filteredRows,
-              search: true,
-              pagination: { enabled: true, limit: 10 },
-              sort: true,
-              resizable: true,
-              language: {
-                search: { placeholder: '🔍 Buscar...' },
-                pagination: {
-                  previous: 'Anterior',
-                  next: 'Siguiente',
-                  showing: 'Mostrando',
-                  results: () => 'registros'
-                }
+            const headers = data[0];
+            let rows = data.slice(1).map(row => {
+              const newRow = [...row];
+              while (newRow.length < headers.length) {
+                newRow.push("");
               }
-            }).render(contenedor);
-            console.log(`Renderizado exitoso para "${hojaNombre}"`);
-          } catch (err) {
-            console.error(`Error al renderizar hoja "${hojaNombre}":`, err);
-            contenedor.innerHTML = `<div class="alert alert-danger">❌ Error al mostrar tabla de "${hojaNombre}".</div>`;
+              return newRow;
+            });
+
+            // Filtrar columnas vacías
+            const activeCols = headers.map((_, i) => {
+              return !rows.every(r => {
+                const v = r[i];
+                return v === null || v === undefined || v === "";
+              });
+            });
+
+            const filteredHeaders = [];
+            const filteredRows = rows.map(() => []);
+
+            headers.forEach((h, i) => {
+              if (activeCols[i]) {
+                filteredHeaders.push(h || `Col_${i}`);
+                rows.forEach((r, rIndex) => {
+                  filteredRows[rIndex].push(r[i]);
+                });
+              }
+            });
+
+            if (filteredHeaders.length === 0) {
+              contenedor.innerHTML = `<div class="alert alert-info">ℹ️ No hay columnas con datos para mostrar en "${hojaNombre}".</div>`;
+              return;
+            }
+
+            const columns = filteredHeaders.map((h, idx) => ({
+              name: h,
+              id: `${hojaNombre}_col_${idx}`,
+              formatter: cell => cell ?? ""
+            }));
+
+            try {
+              new gridjs.Grid({
+                columns: columns,
+                data: filteredRows,
+                search: true,
+                pagination: { enabled: true, limit: 10 },
+                sort: true,
+                resizable: true,
+                language: {
+                  search: { placeholder: '🔍 Buscar...' },
+                  pagination: {
+                    previous: 'Anterior',
+                    next: 'Siguiente',
+                    showing: 'Mostrando',
+                    results: () => 'registros'
+                  }
+                }
+              }).render(contenedor);
+              console.log(`Renderizado exitoso para "${hojaNombre}"`);
+            } catch (err) {
+              console.error(`Error al renderizar hoja "${hojaNombre}":`, err);
+              contenedor.innerHTML = `<div class="alert alert-danger">❌ Error al mostrar tabla de "${hojaNombre}".</div>`;
+            }
+          });
+        })
+        .catch(err => {
+          console.error("Error cargando Excel:", err);
+          const contenedorPrd = document.getElementById("grid-prd");
+          if (contenedorPrd) {
+            contenedorPrd.innerHTML =
+              `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel.</div>`;
           }
         });
-      })
-      .catch(err => {
-        console.error("Error cargando Excel:", err);
-        document.getElementById("grid-prd").innerHTML =
-          `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel.</div>`;
-      });
+    });
   </script>
 </body>
 </html>
