@@ -18,6 +18,12 @@
     .tab-content {
       margin-top: 1rem;
     }
+    .grid-container {
+      margin-bottom: 40px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      overflow-x: auto;
+    }
     .gridjs-wrapper {
       overflow-x: auto;
     }
@@ -35,15 +41,15 @@
   <div class="tab-content">
     <div class="tab-pane fade show active" id="tab-prd">
       <h3 class="mt-3">Entorno: PRD</h3>
-      <div id="grid-prd"></div>
+      <div id="grid-prd" class="grid-container"></div>
     </div>
     <div class="tab-pane fade" id="tab-qas">
       <h3 class="mt-3">Entorno: QAS</h3>
-      <div id="grid-qas"></div>
+      <div id="grid-qas" class="grid-container"></div>
     </div>
     <div class="tab-pane fade" id="tab-dev">
       <h3 class="mt-3">Entorno: DEV</h3>
-      <div id="grid-dev"></div>
+      <div id="grid-dev" class="grid-container"></div>
     </div>
   </div>
 
@@ -98,7 +104,6 @@
               return newRow;
             });
 
-            // Filtrar columnas vacías
             const activeCols = headers.map((_, i) =>
               !rows.every(r => {
                 const val = r[i];
@@ -116,7 +121,6 @@
               }
             });
 
-            // Asegurar longitud uniforme
             rows = filteredRows.map(r => {
               const rowCopy = [...r];
               while (rowCopy.length < filteredHeaders.length) rowCopy.push("");
@@ -129,7 +133,6 @@
             console.log("Rows:", rows);
             rows.forEach((r, i) => console.log(`Row ${i}:`, r));
 
-            // Validar consistencia antes de renderizar
             const allValid = rows.every(r => Array.isArray(r) && r.length === filteredHeaders.length);
             if (!allValid) {
               console.error(`❌ Datos inválidos en hoja "${hojaNombre}". Algunas filas tienen longitud distinta a headers.`);
