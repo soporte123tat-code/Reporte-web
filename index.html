@@ -126,4 +126,56 @@
             // ⚠️ DEPURACIÓN: Mostrar info en consola
             console.log(`--- Datos para hoja ${hojaNombre} ---`);
             console.log("Headers:", filteredHeaders);
-            console.log("Rows:", rows)
+            console.log("Rows:", rows);
+            rows.forEach((r, i) => console.log(`Row ${i}:`, r));
+
+            // Validar consistencia antes de renderizar
+            const allValid = rows.every(r => Array.isArray(r) && r.length === filteredHeaders.length);
+            if (!allValid) {
+              console.error(`❌ Datos inválidos en hoja "${hojaNombre}". Algunas filas tienen longitud distinta a headers.`);
+              contenedor.innerHTML = `<div class="alert alert-danger">❌ Error: Datos inconsistentes en "${hojaNombre}".</div>`;
+              return;
+            }
+
+            const columns = filteredHeaders.map((h, idx) => ({
+              name: h,
+              id: `${hojaNombre}_col_${idx}`,
+              formatter: cell => cell ?? ""
+            }));
+
+            try {
+              new gridjs.Grid({
+                columns,
+                data: rows,
+                search: true,
+                pagination: { enabled: true, limit: 10 },
+                sort: true,
+                resizable: true,
+                language: {
+                  search: { placeholder: '🔍 Buscar...' },
+                  pagination: {
+                    previous: 'Anterior',
+                    next: 'Siguiente',
+                    showing: 'Mostrando',
+                    results: () => 'registros'
+                  }
+                }
+              }).render(contenedor);
+              console.log(`✅ Renderizado exitoso para "${hojaNombre}"`);
+            } catch (err) {
+              console.error(`❌ Error renderizando tabla para "${hojaNombre}":`, err);
+              contenedor.innerHTML = `<div class="alert alert-danger">❌ Error mostrando tabla de "${hojaNombre}".</div>`;
+            }
+          });
+        })
+        .catch(err => {
+          console.error("❌ Error cargando Excel:", err);
+          Object.values(hojas).forEach(id => {
+            const c = document.getElementById(id);
+            if (c) c.innerHTML = `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel.</div>`;
+          });
+        });
+    });
+  </script>
+</body>
+</html>
