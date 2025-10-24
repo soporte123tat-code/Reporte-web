@@ -38,9 +38,9 @@
       margin: 0 auto;
     }
 
-    /* Header mejorado */
+    /* Header mejorado con colores más oscuros */
     .header-section {
-      background: var(--bg-gradient);
+      background: linear-gradient(135deg, #4338ca 0%, #5b21b6 100%);
       padding: 2.5rem;
       border-radius: 20px;
       margin-bottom: 2rem;
@@ -54,13 +54,15 @@
       font-size: 2.5rem;
       font-weight: 700;
       margin-bottom: 0.5rem;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      color: #ffffff;
     }
 
     .header-section p {
       font-size: 1.1rem;
       opacity: 0.95;
       margin: 0;
+      color: #e0e7ff;
     }
 
     /* Tabs mejoradas */
@@ -84,7 +86,7 @@
       border-radius: 10px;
       padding: 1rem 1.5rem;
       font-weight: 600;
-      color: #64748b;
+      color: #475569;
       transition: var(--transition);
       text-align: center;
       background: transparent;
@@ -99,7 +101,7 @@
     }
 
     .nav-tabs .nav-link.active {
-      background: var(--bg-gradient);
+      background: linear-gradient(135deg, #4338ca 0%, #5b21b6 100%);
       color: white;
       box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
       transform: translateY(-2px);
@@ -138,7 +140,7 @@
       font-weight: 700;
       margin-bottom: 1.5rem;
       padding-bottom: 1rem;
-      border-bottom: 3px solid #e2e8f0;
+      border-bottom: 3px solid #4338ca;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -155,7 +157,7 @@
       position: relative;
       min-height: 400px;
       border-radius: 10px;
-      overflow: hidden;
+      overflow: visible;
       background: #fafafa;
     }
 
@@ -196,15 +198,26 @@
       color: #64748b;
     }
 
-    /* Grid.js personalización */
+    /* Grid.js personalización mejorada */
+    .grid-wrapper {
+      width: 100%;
+      overflow: visible !important;
+    }
+
     .gridjs-wrapper {
       border-radius: 10px;
-      overflow: hidden;
+      overflow: visible !important;
       box-shadow: none;
+      width: 100%;
+    }
+
+    .gridjs-container {
+      overflow: visible !important;
+      width: 100%;
     }
 
     .gridjs-head {
-      background: var(--bg-gradient) !important;
+      background: linear-gradient(135deg, #4338ca 0%, #5b21b6 100%) !important;
     }
 
     .gridjs-th {
@@ -215,33 +228,91 @@
       border: none !important;
     }
 
+    .gridjs-table {
+      width: 100% !important;
+      table-layout: auto !important;
+    }
+
+    .gridjs-tbody {
+      width: 100% !important;
+    }
+
     .gridjs-tr {
       transition: var(--transition);
+      width: 100% !important;
     }
 
     .gridjs-tr:hover {
       background: #f8fafc !important;
-      transform: scale(1.01);
+      transform: scale(1.001);
     }
 
     .gridjs-td {
       padding: 1rem !important;
       border-bottom: 1px solid #f1f5f9 !important;
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      max-width: 300px !important;
     }
 
+    /* Barra de búsqueda mejorada */
+    .gridjs-search {
+      padding: 1.5rem 1rem !important;
+      background: #f8fafc !important;
+      border-radius: 10px 10px 0 0 !important;
+      margin-bottom: 0 !important;
+      width: 100% !important;
+      display: block !important;
+      position: relative !important;
+      z-index: 10 !important;
+    }
+
+    .gridjs-search-input {
+      border: 2px solid #cbd5e1 !important;
+      border-radius: 10px !important;
+      padding: 0.75rem 1rem 0.75rem 2.5rem !important;
+      font-size: 1rem !important;
+      transition: var(--transition) !important;
+      width: 100% !important;
+      display: block !important;
+      background-color: white !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%234338ca' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.35-4.35'%3E%3C/path%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: 10px center !important;
+      background-size: 18px !important;
+    }
+
+    .gridjs-search-input:focus {
+      outline: none !important;
+      border-color: var(--primary-color) !important;
+      box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1) !important;
+    }
+
+    .gridjs-search-input::placeholder {
+      color: #94a3b8 !important;
+      font-weight: 500 !important;
+    }
+
+    /* Paginación mejorada */
     .gridjs-pagination {
       padding: 1.5rem 1rem !important;
       background: #f8fafc !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      flex-wrap: wrap !important;
     }
 
     .gridjs-pagination button {
       background: white !important;
       border: 2px solid #e2e8f0 !important;
-      color: #64748b !important;
+      color: #475569 !important;
       font-weight: 600 !important;
       padding: 0.5rem 1rem !important;
       border-radius: 8px !important;
       transition: var(--transition) !important;
+      margin: 0 0.25rem !important;
     }
 
     .gridjs-pagination button:hover:not(:disabled) {
@@ -253,27 +324,19 @@
 
     .gridjs-pagination button:disabled {
       opacity: 0.3 !important;
+      cursor: not-allowed !important;
     }
 
-    .gridjs-search {
-      padding: 1rem !important;
-      background: #f8fafc !important;
-      border-radius: 10px 10px 0 0 !important;
-    }
-
-    .gridjs-search-input {
-      border: 2px solid #e2e8f0 !important;
-      border-radius: 10px !important;
-      padding: 0.75rem 1rem !important;
-      font-size: 1rem !important;
-      transition: var(--transition) !important;
-      width: 100% !important;
-    }
-
-    .gridjs-search-input:focus {
-      outline: none !important;
+    .gridjs-pagination .gridjs-currentPage {
+      background: var(--primary-color) !important;
+      color: white !important;
       border-color: var(--primary-color) !important;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+    }
+
+    .gridjs-summary {
+      color: #64748b !important;
+      font-weight: 500 !important;
+      margin-right: 1rem !important;
     }
 
     /* Alertas mejoradas */
@@ -354,6 +417,10 @@
 
       body {
         padding: 1rem 0.5rem;
+      }
+
+      .gridjs-td {
+        max-width: 200px !important;
       }
     }
   </style>
@@ -451,7 +518,7 @@
         contenedor.appendChild(gridDiv);
       }
 
-      // Crear el grid
+      // Crear el grid con configuración optimizada
       const grid = new gridjs.Grid({
         columns,
         data: rows,
@@ -461,13 +528,13 @@
         },
         pagination: { 
           enabled: true, 
-          limit: 15,
+          limit: 20,
           summary: true
         },
         sort: true,
         resizable: true,
-        fixedHeader: true,
-        height: '500px',
+        fixedHeader: false,
+        autoWidth: true,
         language: {
           search: { 
             placeholder: '🔍 Buscar en la tabla...' 
@@ -485,12 +552,20 @@
         },
         style: {
           table: {
-            'white-space': 'nowrap'
+            'width': '100%',
+            'table-layout': 'auto'
+          },
+          th: {
+            'text-align': 'left'
+          },
+          td: {
+            'text-align': 'left',
+            'white-space': 'normal',
+            'word-wrap': 'break-word'
           }
         }
       });
 
-      grid.render(gridDiv);
       return grid;
     }
 
@@ -538,11 +613,13 @@
           }
 
           const headers = data[0].map(h => h || '');
-          const rows = data.slice(1).map(r => {
-            const row = [...r];
-            while (row.length < headers.length) row.push('');
-            return row;
-          });
+          const rows = data.slice(1)
+            .filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ''))
+            .map(r => {
+              const row = [...r];
+              while (row.length < headers.length) row.push('');
+              return row.map(cell => cell === null || cell === undefined ? '' : String(cell));
+            });
 
           const columns = headers.map((h, i) => ({ 
             name: h || `Columna ${i + 1}`, 
@@ -571,7 +648,18 @@
 
           // Crear nuevo grid
           const grid = createGrid(contenedor, hojaNombre, columns, rows);
+          
+          // Renderizar el grid
+          await grid.render(document.getElementById(`wrapper-${hojaNombre}`));
+          
+          // Guardar instancia
           gridInstances[hojaNombre] = grid;
+          
+          // Esperar a que el grid se renderice completamente
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // Forzar actualización del layout
+          grid.forceRender();
           
           showLoading(contenedor, false);
         }
@@ -596,23 +684,33 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadExcel();
 
-      // Manejo de cambio de pestañas con animación suave
+      // Manejo de cambio de pestañas con re-renderizado
       const tabButtons = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
       tabButtons.forEach(btn => {
-        btn.addEventListener('shown.bs.tab', event => {
+        btn.addEventListener('shown.bs.tab', async (event) => {
           const targetId = event.target.getAttribute('data-bs-target');
           const hojaKey = targetId.replace('#tab-', '').toUpperCase();
           const grid = gridInstances[hojaKey];
+          const contenedor = document.getElementById(hojas[hojaKey]);
           
           // Forzar re-render del grid para asegurar visualización correcta
-          if (grid) {
-            setTimeout(() => {
-              try {
+          if (grid && contenedor) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            try {
+              // Actualizar datos y forzar render
+              if (storedData[hojaKey] && storedColumns[hojaKey]) {
+                grid.updateConfig({
+                  data: storedData[hojaKey],
+                  columns: storedColumns[hojaKey]
+                });
+                
+                await new Promise(resolve => setTimeout(resolve, 50));
                 grid.forceRender();
-              } catch (e) {
-                console.warn("Info: Grid ya renderizado", e);
               }
-            }, 100);
+            } catch (e) {
+              console.warn("Info: Grid actualizado", e);
+            }
           }
         });
       });
