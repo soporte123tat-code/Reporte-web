@@ -2,63 +2,119 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Visualizacion Bitacora</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visualización Bitácora</title>
 
+  <!-- Bootstrap y Grid.js -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
   <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+  <!-- Estilos personalizados -->
   <style>
     body {
-      background: #f7f9fc;
+      background: #f4f7fb;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      color: #333;
       padding: 2rem;
-      font-family: Arial, sans-serif;
     }
+
+    header {
+      background: linear-gradient(90deg, #007bff, #6610f2);
+      color: white;
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-tabs .nav-link {
+      font-weight: 500;
+      color: #495057;
+      border: none;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav-tabs .nav-link.active {
+      color: #0d6efd;
+      border-color: #0d6efd;
+      background-color: transparent;
+    }
+
     .tab-content {
+      margin-top: 1.5rem;
+    }
+
+    .card {
+      border: none;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      background: #fff;
+    }
+
+    .grid-container {
       margin-top: 1rem;
     }
-    .gridjs-wrapper {
-      overflow-x: auto;
+
+    .gridjs-search-input {
+      border-radius: 0.5rem !important;
+      border-color: #ced4da !important;
+      padding: 0.4rem 0.75rem !important;
     }
-    .grid-container {
-      margin-bottom: 40px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      overflow-x: auto;
+
+    .gridjs-pagination {
+      margin-top: 1rem !important;
     }
   </style>
 </head>
-<body>
-  <h1 class="text-center mb-4">📊 Visualizacion Bitacora</h1>
 
-  <ul class="nav nav-tabs" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-prd" type="button">PRD</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-qas" type="button">QAS</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-dev" type="button">DEV</button></li>
+<body>
+  <header>
+    <h1>📊 Visualización Bitácora</h1>
+    <p class="mb-0">Monitoreo de entornos PRD, QAS y DEV</p>
+  </header>
+
+  <ul class="nav nav-tabs justify-content-center" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-prd" type="button">Producción (PRD)</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-qas" type="button">Calidad (QAS)</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-dev" type="button">Desarrollo (DEV)</button></li>
   </ul>
 
   <div class="tab-content">
     <div class="tab-pane fade show active" id="tab-prd">
-      <h3 class="mt-3">Entorno: PRD</h3>
-      <div id="grid-prd" class="grid-container"></div>
+      <div class="card mt-3">
+        <h4 class="text-primary mb-3">Entorno: PRD</h4>
+        <div id="grid-prd" class="grid-container"></div>
+      </div>
     </div>
     <div class="tab-pane fade" id="tab-qas">
-      <h3 class="mt-3">Entorno: QAS</h3>
-      <div id="grid-qas" class="grid-container"></div>
+      <div class="card mt-3">
+        <h4 class="text-primary mb-3">Entorno: QAS</h4>
+        <div id="grid-qas" class="grid-container"></div>
+      </div>
     </div>
     <div class="tab-pane fade" id="tab-dev">
-      <h3 class="mt-3">Entorno: DEV</h3>
-      <div id="grid-dev" class="grid-container"></div>
+      <div class="card mt-3">
+        <h4 class="text-primary mb-3">Entorno: DEV</h4>
+        <div id="grid-dev" class="grid-container"></div>
+      </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    const gridInstances = {}; // guardar instancias
-    const storedData = {}; // guardar datos y columnas para re-renderizar
-    const storedConfig = {}; // para columnas (configuración) también
+    const gridInstances = {};
+    const storedData = {};
+    const storedConfig = {};
 
     document.addEventListener("DOMContentLoaded", () => {
       const excelUrl = 'https://raw.githubusercontent.com/soporte123tat-code/Reporte-web/main/Reporte_2025-10-09.xlsx';
@@ -66,7 +122,7 @@
 
       fetch(excelUrl)
         .then(res => {
-          if (!res.ok) throw new Error(`Error HTTP ${res.status} al cargar Excel`);
+          if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
           return res.arrayBuffer();
         })
         .then(buffer => {
@@ -75,57 +131,31 @@
 
           Object.entries(hojas).forEach(([hojaNombre, contenedorId]) => {
             const contenedor = document.getElementById(contenedorId);
-            if (!contenedor) return;
-            contenedor.innerHTML = '';
-
             if (!workbook.SheetNames.includes(hojaNombre)) {
               contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada.</div>`;
               return;
             }
 
             const hoja = workbook.Sheets[hojaNombre];
-            let data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
-            if (!Array.isArray(data) || data.length < 2) {
+            const data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
+
+            if (data.length < 2) {
               contenedor.innerHTML = `<div class="alert alert-info">ℹ️ Hoja "${hojaNombre}" sin datos útiles.</div>`;
               return;
             }
 
             const headers = data[0];
-            const rawRows = data.slice(1);
-            const validRows = rawRows.filter(row => Array.isArray(row));
-            let rows = validRows.map(row => {
-              const newRow = Array.from(row);
-              while (newRow.length < headers.length) newRow.push("");
-              return newRow;
-            });
-
-            const activeCols = headers.map((_, i) =>
-              !rows.every(r => {
-                const v = r[i];
-                return v === null || v === undefined || v === "";
-              })
-            );
+            let rows = data.slice(1).filter(r => Array.isArray(r));
+            const activeCols = headers.map((_, i) => !rows.every(r => !r[i]));
 
             const filteredHeaders = [];
             const filteredRows = rows.map(() => []);
             headers.forEach((h, i) => {
               if (activeCols[i]) {
                 filteredHeaders.push(h || `Col_${i}`);
-                rows.forEach((r, idx) => filteredRows[idx].push(r[i]));
+                rows.forEach((r, idx) => filteredRows[idx].push(r[i] || ""));
               }
             });
-
-            rows = filteredRows.map(r => {
-              const rc = [...r];
-              while (rc.length < filteredHeaders.length) rc.push("");
-              return rc.slice(0, filteredHeaders.length);
-            });
-
-            const allValid = rows.every(r => Array.isArray(r) && r.length === filteredHeaders.length);
-            if (!allValid) {
-              contenedor.innerHTML = `<div class="alert alert-danger">❌ Error: Datos inconsistente en "${hojaNombre}".</div>`;
-              return;
-            }
 
             const columns = filteredHeaders.map((h, idx) => ({
               name: h,
@@ -133,65 +163,62 @@
               formatter: cell => cell ?? ""
             }));
 
-            // Guardar configuración y datos
-            storedData[hojaNombre] = rows;
+            storedData[hojaNombre] = filteredRows;
             storedConfig[hojaNombre] = columns;
 
-            try {
-              const grid = new gridjs.Grid({
-                columns,
-                data: rows,
-                search: true,
-                pagination: { enabled: true, limit: 10 },
-                sort: true,
-                resizable: true,
-                language: {
-                  search: { placeholder: '🔍 Buscar...' },
-                  pagination: {
-                    previous: 'Anterior',
-                    next: 'Siguiente',
-                    showing: 'Mostrando',
-                    results: () => 'registros'
-                  }
+            const grid = new gridjs.Grid({
+              columns,
+              data: filteredRows,
+              search: true,
+              pagination: { enabled: true, limit: 10 },
+              sort: true,
+              resizable: true,
+              language: {
+                search: { placeholder: '🔍 Buscar...' },
+                pagination: {
+                  previous: 'Anterior',
+                  next: 'Siguiente',
+                  showing: 'Mostrando',
+                  results: () => 'registros'
                 }
-              });
-              grid.render(contenedor);
-              gridInstances[hojaNombre] = grid;
-              console.log(`✅ Renderizado exitoso para "${hojaNombre}"`);
-            } catch (err) {
-              console.error(`❌ Error renderizando hoja "${hojaNombre}":`, err);
-              contenedor.innerHTML = `<div class="alert alert-danger">❌ Error mostrando tabla de "${hojaNombre}".</div>`;
-            }
+              }
+            });
+            grid.render(contenedor);
+            gridInstances[hojaNombre] = grid;
           });
         })
         .catch(err => {
           console.error("❌ Error cargando Excel:", err);
           Object.values(hojas).forEach(id => {
-            let c = document.getElementById(id);
+            const c = document.getElementById(id);
             if (c) c.innerHTML = `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel.</div>`;
           });
         });
 
-      // Al activar una pestaña, forzar re-render
+      // Re-renderizar al cambiar de pestaña
       const tabButtons = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
       tabButtons.forEach(btn => {
         btn.addEventListener('shown.bs.tab', event => {
-          const targetId = event.target.getAttribute('data-bs-target'); // e.g. "#tab-qas"
-          const hojaKey = targetId.replace('#tab-', '').toUpperCase(); // PRD/QAS/DEV
+          const hojaKey = event.target.getAttribute('data-bs-target').replace('#tab-', '').toUpperCase();
           const grid = gridInstances[hojaKey];
-          const rows = storedData[hojaKey];
-          const columns = storedConfig[hojaKey];
-
-          if (grid && rows && columns) {
-            // Opción: actualizar config y re-render
-            grid.updateConfig({ data: rows, columns: columns }).forceRender();
-            console.log(`🔄 grid.updateConfig + forceRender para "${hojaKey}"`);
+          if (grid && storedData[hojaKey]) {
+            grid.updateConfig({ data: storedData[hojaKey], columns: storedConfig[hojaKey] }).forceRender();
+            console.log(`🔄 Refrescado "${hojaKey}"`);
           }
+          fixSearchInputs();
         });
       });
+
+      // ✅ Fix del warning: agregar id y name al input de búsqueda
+      function fixSearchInputs() {
+        document.querySelectorAll('.gridjs-search-input').forEach((el, idx) => {
+          if (!el.id) el.id = `gridjs_search_${idx}`;
+          if (!el.name) el.name = `gridjs_search_${idx}`;
+        });
+      }
+
+      setTimeout(fixSearchInputs, 1000);
     });
   </script>
 </body>
 </html>
-
-
