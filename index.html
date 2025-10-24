@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Visualización Bitácora Dinámica</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -10,61 +11,408 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
+    :root {
+      --primary-color: #4f46e5;
+      --secondary-color: #06b6d4;
+      --success-color: #10b981;
+      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      background: #f7f9fc;
-      padding: 2rem;
-      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem 1rem;
     }
-    .tab-content {
-      margin-top: 1rem;
+
+    .container-fluid {
+      max-width: 1400px;
+      margin: 0 auto;
     }
-    .grid-container {
-      margin-bottom: 40px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      min-height: 120px;
+
+    /* Header mejorado */
+    .header-section {
+      background: var(--bg-gradient);
+      padding: 2.5rem;
+      border-radius: 20px;
+      margin-bottom: 2rem;
+      box-shadow: var(--card-shadow);
+      color: white;
+      text-align: center;
+      animation: slideDown 0.6s ease-out;
+    }
+
+    .header-section h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .header-section p {
+      font-size: 1.1rem;
+      opacity: 0.95;
+      margin: 0;
+    }
+
+    /* Tabs mejoradas */
+    .nav-tabs {
+      border: none;
+      background: white;
+      padding: 1rem;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .nav-tabs .nav-item {
+      flex: 1;
+    }
+
+    .nav-tabs .nav-link {
+      border: none;
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+      color: #64748b;
+      transition: var(--transition);
+      text-align: center;
+      background: transparent;
       position: relative;
+      overflow: hidden;
     }
+
+    .nav-tabs .nav-link:hover {
+      background: #f1f5f9;
+      color: var(--primary-color);
+      transform: translateY(-2px);
+    }
+
+    .nav-tabs .nav-link.active {
+      background: var(--bg-gradient);
+      color: white;
+      box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .nav-tabs .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-tabs .nav-link.active::before {
+      left: 100%;
+    }
+
+    /* Contenido de pestañas */
+    .tab-content {
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-pane {
+      background: white;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: var(--card-shadow);
+      min-height: 500px;
+    }
+
+    .tab-pane h3 {
+      color: #1e293b;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 3px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-pane h3::before {
+      content: '📊';
+      font-size: 1.8rem;
+    }
+
+    /* Grid Container mejorado */
+    .grid-container {
+      margin-bottom: 2rem;
+      position: relative;
+      min-height: 400px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fafafa;
+    }
+
+    /* Loading overlay mejorado */
     .loading-overlay {
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.8);
-      display: flex;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(5px);
+      display: none;
       justify-content: center;
       align-items: center;
-      font-size: 1.2rem;
-      font-weight: bold;
-      z-index: 10;
-      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    /* Grid.js personalización */
+    .gridjs-wrapper {
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: none;
+    }
+
+    .gridjs-head {
+      background: var(--bg-gradient) !important;
+    }
+
+    .gridjs-th {
+      background: transparent !important;
+      color: white !important;
+      font-weight: 600 !important;
+      padding: 1rem !important;
+      border: none !important;
+    }
+
+    .gridjs-tr {
+      transition: var(--transition);
+    }
+
+    .gridjs-tr:hover {
+      background: #f8fafc !important;
+      transform: scale(1.01);
+    }
+
+    .gridjs-td {
+      padding: 1rem !important;
+      border-bottom: 1px solid #f1f5f9 !important;
+    }
+
+    .gridjs-pagination {
+      padding: 1.5rem 1rem !important;
+      background: #f8fafc !important;
+    }
+
+    .gridjs-pagination button {
+      background: white !important;
+      border: 2px solid #e2e8f0 !important;
+      color: #64748b !important;
+      font-weight: 600 !important;
+      padding: 0.5rem 1rem !important;
+      border-radius: 8px !important;
+      transition: var(--transition) !important;
+    }
+
+    .gridjs-pagination button:hover:not(:disabled) {
+      background: var(--primary-color) !important;
+      color: white !important;
+      border-color: var(--primary-color) !important;
+      transform: translateY(-2px);
+    }
+
+    .gridjs-pagination button:disabled {
+      opacity: 0.3 !important;
+    }
+
+    .gridjs-search {
+      padding: 1rem !important;
+      background: #f8fafc !important;
+      border-radius: 10px 10px 0 0 !important;
+    }
+
+    .gridjs-search-input {
+      border: 2px solid #e2e8f0 !important;
+      border-radius: 10px !important;
+      padding: 0.75rem 1rem !important;
+      font-size: 1rem !important;
+      transition: var(--transition) !important;
+      width: 100% !important;
+    }
+
+    .gridjs-search-input:focus {
+      outline: none !important;
+      border-color: var(--primary-color) !important;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+    }
+
+    /* Alertas mejoradas */
+    .alert {
+      border-radius: 10px;
+      border: none;
+      padding: 1.5rem;
+      font-weight: 500;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    .alert-warning {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+    }
+
+    .alert-info {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      color: #1e40af;
+    }
+
+    .alert-danger {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+    }
+
+    /* Animaciones */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header-section h1 {
+        font-size: 1.8rem;
+      }
+
+      .nav-tabs {
+        flex-direction: column;
+      }
+
+      .tab-pane {
+        padding: 1rem;
+      }
+
+      body {
+        padding: 1rem 0.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1 class="text-center mb-4">📊 Visualización Bitácora Dinámica</h1>
-
-  <ul class="nav nav-tabs" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-prd" type="button">PRD</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-qas" type="button">QAS</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-dev" type="button">DEV</button></li>
-  </ul>
-
-  <div class="tab-content">
-    <div class="tab-pane fade show active" id="tab-prd">
-      <h3 class="mt-3">Entorno: PRD</h3>
-      <div id="grid-prd" class="grid-container">
-        <div class="loading-overlay">Cargando...</div>
-      </div>
+  <div class="container-fluid">
+    <!-- Header mejorado -->
+    <div class="header-section">
+      <h1>📊 Dashboard Bitácora Dinámica</h1>
+      <p>Visualización de reportes en tiempo real - PRD | QAS | DEV</p>
     </div>
-    <div class="tab-pane fade" id="tab-qas">
-      <h3 class="mt-3">Entorno: QAS</h3>
-      <div id="grid-qas" class="grid-container">
-        <div class="loading-overlay">Cargando...</div>
+
+    <!-- Tabs mejoradas -->
+    <ul class="nav nav-tabs" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-prd" type="button">
+          🟢 PRD
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-qas" type="button">
+          🟡 QAS
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-dev" type="button">
+          🔵 DEV
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="tab-prd">
+        <h3>Entorno Producción</h3>
+        <div id="grid-prd" class="grid-container">
+          <div class="loading-overlay active">
+            <div class="spinner"></div>
+            <div class="loading-text">Cargando datos...</div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="tab-pane fade" id="tab-dev">
-      <h3 class="mt-3">Entorno: DEV</h3>
-      <div id="grid-dev" class="grid-container">
-        <div class="loading-overlay">Cargando...</div>
+      <div class="tab-pane fade" id="tab-qas">
+        <h3>Entorno QAS</h3>
+        <div id="grid-qas" class="grid-container">
+          <div class="loading-overlay">
+            <div class="spinner"></div>
+            <div class="loading-text">Cargando datos...</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="tab-dev">
+        <h3>Entorno Desarrollo</h3>
+        <div id="grid-dev" class="grid-container">
+          <div class="loading-overlay">
+            <div class="spinner"></div>
+            <div class="loading-text">Cargando datos...</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -76,14 +424,25 @@
     const storedData = {};
     const storedColumns = {};
     const hojas = { PRD: 'grid-prd', QAS: 'grid-qas', DEV: 'grid-dev' };
+    let isLoading = false;
 
     function showLoading(container, show) {
       const overlay = container.querySelector('.loading-overlay');
-      if (overlay) overlay.style.display = show ? 'flex' : 'none';
+      if (overlay) {
+        if (show) {
+          overlay.classList.add('active');
+        } else {
+          overlay.classList.remove('active');
+        }
+      }
     }
 
     async function loadExcel() {
+      if (isLoading) return;
+      isLoading = true;
+
       const excelUrl = 'https://raw.githubusercontent.com/soporte123tat-code/Reporte-web/main/Reporte_2025-10-09.xlsx';
+      
       Object.values(hojas).forEach(id => {
         const c = document.getElementById(id);
         if (c) showLoading(c, true);
@@ -98,10 +457,12 @@
 
         for (const [hojaNombre, contenedorId] of Object.entries(hojas)) {
           const contenedor = document.getElementById(contenedorId);
-          showLoading(contenedor, true);
+          
+          // Pequeña pausa para animación suave
+          await new Promise(resolve => setTimeout(resolve, 100));
 
           if (!workbook.SheetNames.includes(hojaNombre)) {
-            contenedor.innerHTML = `<div class="alert alert-warning">Hoja "${hojaNombre}" no encontrada.</div>`;
+            contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada en el archivo.</div>`;
             showLoading(contenedor, false);
             continue;
           }
@@ -110,40 +471,83 @@
           const data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
 
           if (!data || data.length < 2) {
-            contenedor.innerHTML = `<div class="alert alert-info">Hoja "${hojaNombre}" sin datos útiles.</div>`;
+            contenedor.innerHTML = `<div class="alert alert-info">ℹ️ La hoja "${hojaNombre}" no contiene datos para mostrar.</div>`;
             showLoading(contenedor, false);
             continue;
           }
 
-          const headers = data[0];
-          const rows = data.slice(1).map(r => [...r, ...Array(headers.length - r.length).fill('')]);
+          const headers = data[0].map(h => h || '');
+          const rows = data.slice(1).map(r => {
+            const row = [...r];
+            while (row.length < headers.length) row.push('');
+            return row;
+          });
 
-          const columns = headers.map((h, i) => ({ name: h || `Col_${i}`, id: `${hojaNombre}_col_${i}` }));
+          const columns = headers.map((h, i) => ({ 
+            name: h || `Columna ${i + 1}`, 
+            id: `${hojaNombre}_col_${i}`,
+            width: 'auto'
+          }));
 
           storedData[hojaNombre] = rows;
           storedColumns[hojaNombre] = columns;
 
-          if (!gridInstances[hojaNombre]) {
-            contenedor.innerHTML = ''; // limpiar contenedor
-            const grid = new gridjs.Grid({
-              columns,
-              data: rows,
-              search: true,
-              pagination: { enabled: true, limit: 10 },
-              sort: true,
-              resizable: true,
-              language: {
-                search: { placeholder: '🔍 Buscar...' },
-                pagination: { previous: 'Anterior', next: 'Siguiente', showing: 'Mostrando', results: () => 'registros' }
-              }
-            });
-            grid.render(contenedor);
-            gridInstances[hojaNombre] = grid;
-          } else {
-            // Actualizar datos existentes de manera segura
-            gridInstances[hojaNombre].updateConfig({ data: rows, columns }).forceRender();
+          // Destruir grid anterior si existe
+          if (gridInstances[hojaNombre]) {
+            try {
+              gridInstances[hojaNombre].destroy();
+            } catch (e) {
+              console.warn("No se pudo destruir grid anterior:", e);
+            }
           }
 
+          // Limpiar contenedor
+          const loadingEl = contenedor.querySelector('.loading-overlay');
+          contenedor.innerHTML = '';
+          if (loadingEl) contenedor.appendChild(loadingEl);
+
+          // Crear nuevo grid con configuración optimizada
+          const grid = new gridjs.Grid({
+            columns,
+            data: rows,
+            search: {
+              enabled: true,
+              placeholder: '🔍 Buscar en la tabla...'
+            },
+            pagination: { 
+              enabled: true, 
+              limit: 15,
+              summary: true
+            },
+            sort: true,
+            resizable: true,
+            fixedHeader: true,
+            height: '500px',
+            language: {
+              search: { 
+                placeholder: '🔍 Buscar en la tabla...' 
+              },
+              pagination: { 
+                previous: '← Anterior', 
+                next: 'Siguiente →', 
+                showing: 'Mostrando', 
+                results: () => 'registros',
+                to: 'a',
+                of: 'de'
+              },
+              noRecordsFound: 'No se encontraron registros',
+              error: 'Error al cargar los datos'
+            },
+            style: {
+              table: {
+                'white-space': 'nowrap'
+              }
+            }
+          });
+
+          grid.render(contenedor);
+          gridInstances[hojaNombre] = grid;
+          
           showLoading(contenedor, false);
         }
       } catch (err) {
@@ -151,33 +555,36 @@
         Object.values(hojas).forEach(id => {
           const c = document.getElementById(id);
           if (c) {
-            c.innerHTML = `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel.</div>`;
+            c.innerHTML = `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel. Por favor, verifica la conexión e intenta nuevamente.</div>`;
             showLoading(c, false);
           }
         });
+      } finally {
+        isLoading = false;
       }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
       loadExcel();
 
+      // Manejo de cambio de pestañas con animación suave
       const tabButtons = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
       tabButtons.forEach(btn => {
-        btn.addEventListener('shown.bs.tab', async event => {
+        btn.addEventListener('show.bs.tab', event => {
           const targetId = event.target.getAttribute('data-bs-target');
           const hojaKey = targetId.replace('#tab-', '').toUpperCase();
-          const contenedor = document.getElementById(hojaKey.toLowerCase());
           const grid = gridInstances[hojaKey];
-          const rows = storedData[hojaKey];
-          const columns = storedColumns[hojaKey];
-
-          if (!grid || !rows || !columns) return;
-
-          showLoading(contenedor, true);
-          await new Promise(resolve => setTimeout(resolve, 50)); // pequeña pausa para renderizar overlay
-
-          grid.updateConfig({ data: rows, columns }).forceRender();
-          showLoading(contenedor, false);
+          
+          // Forzar re-render solo si el grid existe y tiene datos
+          if (grid && storedData[hojaKey] && storedColumns[hojaKey]) {
+            setTimeout(() => {
+              try {
+                grid.forceRender();
+              } catch (e) {
+                console.warn("No se pudo forzar render:", e);
+              }
+            }, 150);
+          }
         });
       });
     });
