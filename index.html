@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <title>Visualización Bitácora</title>
 
+  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Grid.js CSS -->
   <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+
   <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -27,25 +30,22 @@
       border: 1px solid #ddd;
       overflow-x: auto;
       position: relative;
-      min-height: 50px;
+      min-height: 150px;
     }
-    .loading-overlay {
+    /* Overlay cargando */
+    .overlay-loading {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255,255,255,0.7);
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       font-size: 1.2rem;
       font-weight: bold;
       z-index: 10;
-      display: none;
-    }
-    .loading-overlay.visible {
-      display: flex;
     }
   </style>
 </head>
@@ -61,51 +61,46 @@
   <div class="tab-content">
     <div class="tab-pane fade show active" id="tab-prd">
       <h3 class="mt-3">Entorno: PRD</h3>
-      <div id="grid-prd" class="grid-container">
-        <div class="loading-overlay">Cargando PRD...</div>
-      </div>
+      <div id="grid-prd" class="grid-container"></div>
     </div>
     <div class="tab-pane fade" id="tab-qas">
       <h3 class="mt-3">Entorno: QAS</h3>
-      <div id="grid-qas" class="grid-container">
-        <div class="loading-overlay">Cargando QAS...</div>
-      </div>
+      <div id="grid-qas" class="grid-container"></div>
     </div>
     <div class="tab-pane fade" id="tab-dev">
       <h3 class="mt-3">Entorno: DEV</h3>
-      <div id="grid-dev" class="grid-container">
-        <div class="loading-overlay">Cargando DEV...</div>
-      </div>
+      <div id="grid-dev" class="grid-container"></div>
     </div>
   </div>
 
+  <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    const gridInstances = {};
-    const storedData = {};
-    const storedConfig = {};
+    const gridInstances = {}; // Guardar instancias
+    const storedData = {}; // Guardar datos
+    const storedConfig = {}; // Guardar configuración columnas
+
+    // Funciones overlay cargando
+    function showLoading(container) {
+      let overlay = container.querySelector('.overlay-loading');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'overlay-loading';
+        overlay.textContent = 'Cargando...';
+        container.appendChild(overlay);
+      }
+      overlay.style.display = 'flex';
+    }
+
+    function hideLoading(container) {
+      const overlay = container.querySelector('.overlay-loading');
+      if (overlay) overlay.style.display = 'none';
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
       const excelUrl = 'https://raw.githubusercontent.com/soporte123tat-code/Reporte-web/main/Reporte_2025-10-09.xlsx';
       const hojas = { PRD: 'grid-prd', QAS: 'grid-qas', DEV: 'grid-dev' };
-
-      const showLoading = (container) => {
-        const overlay = container.querySelector('.loading-overlay');
-        if (overlay) overlay.classList.add('visible');
-      };
-
-      const hideLoading = (container) => {
-        const overlay = container.querySelector('.loading-overlay');
-        if (overlay) overlay.classList.remove('visible');
-      };
-
-      const fixSearchInputs = () => {
-        document.querySelectorAll('.gridjs-search input').forEach(input => {
-          if (!input.id) input.id = 'search-' + Math.random().toString(36).substr(2, 9);
-          if (!input.name) input.name = input.id;
-        });
-      };
 
       fetch(excelUrl)
         .then(res => {
@@ -114,14 +109,17 @@
         })
         .then(buffer => {
           const workbook = XLSX.read(buffer, { type: 'array' });
+          console.log("✅ Hojas encontradas:", workbook.SheetNames);
 
           Object.entries(hojas).forEach(([hojaNombre, contenedorId]) => {
             const contenedor = document.getElementById(contenedorId);
             if (!contenedor) return;
-            contenedor.innerHTML = '<div class="loading-overlay visible">Cargando...</div>';
+            contenedor.innerHTML = '';
+            showLoading(contenedor);
 
             if (!workbook.SheetNames.includes(hojaNombre)) {
               contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada.</div>`;
+              hideLoading(contenedor);
               return;
             }
 
@@ -129,6 +127,7 @@
             let data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
             if (!Array.isArray(data) || data.length < 2) {
               contenedor.innerHTML = `<div class="alert alert-info">ℹ️ Hoja "${hojaNombre}" sin datos útiles.</div>`;
+              hideLoading(contenedor);
               return;
             }
 
@@ -142,7 +141,7 @@
             });
 
             const activeCols = headers.map((_, i) =>
-              !rows.every(r => !r[i] && r[i] !== 0)
+              !rows.every(r => r[i] === null || r[i] === undefined || r[i] === "")
             );
 
             const filteredHeaders = [];
@@ -160,12 +159,20 @@
               return rc.slice(0, filteredHeaders.length);
             });
 
+            const allValid = rows.every(r => Array.isArray(r) && r.length === filteredHeaders.length);
+            if (!allValid) {
+              contenedor.innerHTML = `<div class="alert alert-danger">❌ Error: Datos inconsistente en "${hojaNombre}".</div>`;
+              hideLoading(contenedor);
+              return;
+            }
+
             const columns = filteredHeaders.map((h, idx) => ({
               name: h,
               id: `${hojaNombre}_col_${idx}`,
               formatter: cell => cell ?? ""
             }));
 
+            // Guardar configuración y datos
             storedData[hojaNombre] = rows;
             storedConfig[hojaNombre] = columns;
 
@@ -179,19 +186,22 @@
                 resizable: true,
                 language: {
                   search: { placeholder: '🔍 Buscar...' },
-                  pagination: { previous: 'Anterior', next: 'Siguiente', showing: 'Mostrando', results: () => 'registros' }
+                  pagination: {
+                    previous: 'Anterior',
+                    next: 'Siguiente',
+                    showing: 'Mostrando',
+                    results: () => 'registros'
+                  }
                 }
               });
 
-              showLoading(contenedor);
-              grid.render(contenedor); // ✅ render es sincrónico
+              grid.render(contenedor); // Síncrono
               hideLoading(contenedor);
-              fixSearchInputs();
-
               gridInstances[hojaNombre] = grid;
             } catch (err) {
               console.error(`❌ Error renderizando hoja "${hojaNombre}":`, err);
               contenedor.innerHTML = `<div class="alert alert-danger">❌ Error mostrando tabla de "${hojaNombre}".</div>`;
+              hideLoading(contenedor);
             }
           });
         })
@@ -203,7 +213,7 @@
           });
         });
 
-      // Manejar cambio de pestaña
+      // Al activar una pestaña, forzar re-render
       const tabButtons = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
       tabButtons.forEach(btn => {
         btn.addEventListener('shown.bs.tab', event => {
@@ -218,7 +228,6 @@
             showLoading(contenedor);
             grid.updateConfig({ data: rows, columns: columns }).forceRender();
             hideLoading(contenedor);
-            fixSearchInputs();
           }
         });
       });
