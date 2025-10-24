@@ -11,7 +11,6 @@
   <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- Estilos personalizados -->
   <style>
     body {
       background: #f4f7fb;
@@ -58,10 +57,27 @@
       border-radius: 0.75rem;
       padding: 1.5rem;
       background: #fff;
+      position: relative;
+      overflow: hidden;
     }
 
     .grid-container {
       margin-top: 1rem;
+      min-height: 200px;
+    }
+
+    /* Estilo del spinner */
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 10;
+      font-weight: 500;
+      color: #0d6efd;
+      font-size: 1.1rem;
     }
 
     .gridjs-search-input {
@@ -92,18 +108,23 @@
     <div class="tab-pane fade show active" id="tab-prd">
       <div class="card mt-3">
         <h4 class="text-primary mb-3">Entorno: PRD</h4>
+        <div class="loading-overlay">⏳ Cargando datos...</div>
         <div id="grid-prd" class="grid-container"></div>
       </div>
     </div>
+
     <div class="tab-pane fade" id="tab-qas">
       <div class="card mt-3">
         <h4 class="text-primary mb-3">Entorno: QAS</h4>
+        <div class="loading-overlay">⏳ Cargando datos...</div>
         <div id="grid-qas" class="grid-container"></div>
       </div>
     </div>
+
     <div class="tab-pane fade" id="tab-dev">
       <div class="card mt-3">
         <h4 class="text-primary mb-3">Entorno: DEV</h4>
+        <div class="loading-overlay">⏳ Cargando datos...</div>
         <div id="grid-dev" class="grid-container"></div>
       </div>
     </div>
@@ -131,8 +152,11 @@
 
           Object.entries(hojas).forEach(([hojaNombre, contenedorId]) => {
             const contenedor = document.getElementById(contenedorId);
+            const loader = contenedor.previousElementSibling;
+
             if (!workbook.SheetNames.includes(hojaNombre)) {
               contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada.</div>`;
+              loader.remove();
               return;
             }
 
@@ -141,6 +165,7 @@
 
             if (data.length < 2) {
               contenedor.innerHTML = `<div class="alert alert-info">ℹ️ Hoja "${hojaNombre}" sin datos útiles.</div>`;
+              loader.remove();
               return;
             }
 
@@ -183,7 +208,12 @@
                 }
               }
             });
-            grid.render(contenedor);
+
+            grid.render(contenedor).then(() => {
+              loader.remove();
+              fixSearchInputs();
+            });
+
             gridInstances[hojaNombre] = grid;
           });
         })
@@ -191,21 +221,41 @@
           console.error("❌ Error cargando Excel:", err);
           Object.values(hojas).forEach(id => {
             const c = document.getElementById(id);
+            const loader = c.previousElementSibling;
             if (c) c.innerHTML = `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel.</div>`;
+            if (loader) loader.remove();
           });
         });
 
-      // Re-renderizar al cambiar de pestaña
+      // 🧠 Re-renderizar al cambiar de pestaña con validaciones
       const tabButtons = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
+
       tabButtons.forEach(btn => {
         btn.addEventListener('shown.bs.tab', event => {
           const hojaKey = event.target.getAttribute('data-bs-target').replace('#tab-', '').toUpperCase();
-          const grid = gridInstances[hojaKey];
-          if (grid && storedData[hojaKey]) {
-            grid.updateConfig({ data: storedData[hojaKey], columns: storedConfig[hojaKey] }).forceRender();
-            console.log(`🔄 Refrescado "${hojaKey}"`);
+
+          function tryRefreshGrid(attempt = 0) {
+            const grid = gridInstances[hojaKey];
+            const rows = storedData[hojaKey];
+            const cols = storedConfig[hojaKey];
+
+            if (grid && Array.isArray(rows) && Array.isArray(cols)) {
+              try {
+                grid.updateConfig({ data: rows, columns: cols }).forceRender();
+                console.log(`🔄 Refrescado exitosamente "${hojaKey}"`);
+                fixSearchInputs();
+              } catch (err) {
+                console.warn(`⚠️ Error refrescando ${hojaKey}:`, err);
+              }
+            } else if (attempt < 5) {
+              console.log(`⏳ Esperando datos de ${hojaKey}... intento ${attempt + 1}`);
+              setTimeout(() => tryRefreshGrid(attempt + 1), 500);
+            } else {
+              console.warn(`⚠️ No se pudo refrescar "${hojaKey}" después de varios intentos.`);
+            }
           }
-          fixSearchInputs();
+
+          tryRefreshGrid();
         });
       });
 
@@ -217,7 +267,7 @@
         });
       }
 
-      setTimeout(fixSearchInputs, 1000);
+      setTimeout(fixSearchInputs, 1500);
     });
   </script>
 </body>
