@@ -168,7 +168,7 @@
       bottom: 0;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(5px);
-      display: none;
+      display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
@@ -176,8 +176,8 @@
       animation: fadeIn 0.3s ease-out;
     }
 
-    .loading-overlay.active {
-      display: flex;
+    .loading-overlay.hidden {
+      display: none;
     }
 
     .spinner {
@@ -390,7 +390,7 @@
       <div class="tab-pane fade show active" id="tab-prd">
         <h3>Entorno Producción</h3>
         <div id="grid-prd" class="grid-container">
-          <div class="loading-overlay active">
+          <div class="loading-overlay">
             <div class="spinner"></div>
             <div class="loading-text">Cargando datos...</div>
           </div>
@@ -430,11 +430,68 @@
       const overlay = container.querySelector('.loading-overlay');
       if (overlay) {
         if (show) {
-          overlay.classList.add('active');
+          overlay.classList.remove('hidden');
         } else {
-          overlay.classList.remove('active');
+          overlay.classList.add('hidden');
         }
       }
+    }
+
+    function createGrid(contenedor, hojaNombre, columns, rows) {
+      // Crear un contenedor limpio para el grid
+      const gridDiv = document.createElement('div');
+      gridDiv.className = 'grid-wrapper';
+      gridDiv.id = `wrapper-${hojaNombre}`;
+      
+      // Insertar antes del loading overlay
+      const loadingOverlay = contenedor.querySelector('.loading-overlay');
+      if (loadingOverlay) {
+        contenedor.insertBefore(gridDiv, loadingOverlay);
+      } else {
+        contenedor.appendChild(gridDiv);
+      }
+
+      // Crear el grid
+      const grid = new gridjs.Grid({
+        columns,
+        data: rows,
+        search: {
+          enabled: true,
+          placeholder: '🔍 Buscar en la tabla...'
+        },
+        pagination: { 
+          enabled: true, 
+          limit: 15,
+          summary: true
+        },
+        sort: true,
+        resizable: true,
+        fixedHeader: true,
+        height: '500px',
+        language: {
+          search: { 
+            placeholder: '🔍 Buscar en la tabla...' 
+          },
+          pagination: { 
+            previous: '← Anterior', 
+            next: 'Siguiente →', 
+            showing: 'Mostrando', 
+            results: () => 'registros',
+            to: 'a',
+            of: 'de'
+          },
+          noRecordsFound: 'No se encontraron registros',
+          error: 'Error al cargar los datos'
+        },
+        style: {
+          table: {
+            'white-space': 'nowrap'
+          }
+        }
+      });
+
+      grid.render(gridDiv);
+      return grid;
     }
 
     async function loadExcel() {
@@ -462,7 +519,9 @@
           await new Promise(resolve => setTimeout(resolve, 100));
 
           if (!workbook.SheetNames.includes(hojaNombre)) {
-            contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada en el archivo.</div>`;
+            contenedor.innerHTML = `
+              <div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada en el archivo.</div>
+            `;
             showLoading(contenedor, false);
             continue;
           }
@@ -471,7 +530,9 @@
           const data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
 
           if (!data || data.length < 2) {
-            contenedor.innerHTML = `<div class="alert alert-info">ℹ️ La hoja "${hojaNombre}" no contiene datos para mostrar.</div>`;
+            contenedor.innerHTML = `
+              <div class="alert alert-info">ℹ️ La hoja "${hojaNombre}" no contiene datos para mostrar.</div>
+            `;
             showLoading(contenedor, false);
             continue;
           }
@@ -492,9 +553,6 @@
           storedData[hojaNombre] = rows;
           storedColumns[hojaNombre] = columns;
 
-          // Limpiar y preparar contenedor
-          const loadingEl = contenedor.querySelector('.loading-overlay');
-          
           // Destruir grid anterior si existe
           if (gridInstances[hojaNombre]) {
             try {
@@ -505,57 +563,14 @@
             }
           }
 
-          // Limpiar completamente el contenedor
-          contenedor.innerHTML = '';
-          
-          // Crear un nuevo div para el grid
-          const gridWrapper = document.createElement('div');
-          gridWrapper.className = 'grid-wrapper';
-          contenedor.appendChild(gridWrapper);
-          
-          // Re-agregar loading overlay
-          if (loadingEl) contenedor.appendChild(loadingEl);
+          // Limpiar wrapper anterior si existe
+          const oldWrapper = contenedor.querySelector('.grid-wrapper');
+          if (oldWrapper) {
+            oldWrapper.remove();
+          }
 
-          // Crear nuevo grid con configuración optimizada
-          const grid = new gridjs.Grid({
-            columns,
-            data: rows,
-            search: {
-              enabled: true,
-              placeholder: '🔍 Buscar en la tabla...'
-            },
-            pagination: { 
-              enabled: true, 
-              limit: 15,
-              summary: true
-            },
-            sort: true,
-            resizable: true,
-            fixedHeader: true,
-            height: '500px',
-            language: {
-              search: { 
-                placeholder: '🔍 Buscar en la tabla...' 
-              },
-              pagination: { 
-                previous: '← Anterior', 
-                next: 'Siguiente →', 
-                showing: 'Mostrando', 
-                results: () => 'registros',
-                to: 'a',
-                of: 'de'
-              },
-              noRecordsFound: 'No se encontraron registros',
-              error: 'Error al cargar los datos'
-            },
-            style: {
-              table: {
-                'white-space': 'nowrap'
-              }
-            }
-          });
-
-          grid.render(gridWrapper);
+          // Crear nuevo grid
+          const grid = createGrid(contenedor, hojaNombre, columns, rows);
           gridInstances[hojaNombre] = grid;
           
           showLoading(contenedor, false);
@@ -565,7 +580,11 @@
         Object.values(hojas).forEach(id => {
           const c = document.getElementById(id);
           if (c) {
-            c.innerHTML = `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel. Por favor, verifica la conexión e intenta nuevamente.</div>`;
+            c.innerHTML = `
+              <div class="alert alert-danger">
+                ❌ No se pudo cargar el archivo Excel. Por favor, verifica la conexión e intenta nuevamente.
+              </div>
+            `;
             showLoading(c, false);
           }
         });
@@ -583,24 +602,17 @@
         btn.addEventListener('shown.bs.tab', event => {
           const targetId = event.target.getAttribute('data-bs-target');
           const hojaKey = targetId.replace('#tab-', '').toUpperCase();
-          const contenedor = document.getElementById(hojas[hojaKey]);
           const grid = gridInstances[hojaKey];
           
-          // Forzar re-render solo si el grid existe
-          if (grid && contenedor) {
+          // Forzar re-render del grid para asegurar visualización correcta
+          if (grid) {
             setTimeout(() => {
               try {
-                // Verificar que el grid tenga datos antes de renderizar
-                if (storedData[hojaKey] && storedColumns[hojaKey]) {
-                  grid.updateConfig({ 
-                    data: storedData[hojaKey], 
-                    columns: storedColumns[hojaKey] 
-                  }).forceRender();
-                }
+                grid.forceRender();
               } catch (e) {
-                console.warn("Error al actualizar grid:", e);
+                console.warn("Info: Grid ya renderizado", e);
               }
-            }, 200);
+            }, 100);
           }
         });
       });
