@@ -492,18 +492,28 @@
           storedData[hojaNombre] = rows;
           storedColumns[hojaNombre] = columns;
 
+          // Limpiar y preparar contenedor
+          const loadingEl = contenedor.querySelector('.loading-overlay');
+          
           // Destruir grid anterior si existe
           if (gridInstances[hojaNombre]) {
             try {
               gridInstances[hojaNombre].destroy();
+              delete gridInstances[hojaNombre];
             } catch (e) {
-              console.warn("No se pudo destruir grid anterior:", e);
+              console.warn("Error al destruir grid anterior:", e);
             }
           }
 
-          // Limpiar contenedor
-          const loadingEl = contenedor.querySelector('.loading-overlay');
+          // Limpiar completamente el contenedor
           contenedor.innerHTML = '';
+          
+          // Crear un nuevo div para el grid
+          const gridWrapper = document.createElement('div');
+          gridWrapper.className = 'grid-wrapper';
+          contenedor.appendChild(gridWrapper);
+          
+          // Re-agregar loading overlay
           if (loadingEl) contenedor.appendChild(loadingEl);
 
           // Crear nuevo grid con configuración optimizada
@@ -545,7 +555,7 @@
             }
           });
 
-          grid.render(contenedor);
+          grid.render(gridWrapper);
           gridInstances[hojaNombre] = grid;
           
           showLoading(contenedor, false);
@@ -570,20 +580,27 @@
       // Manejo de cambio de pestañas con animación suave
       const tabButtons = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
       tabButtons.forEach(btn => {
-        btn.addEventListener('show.bs.tab', event => {
+        btn.addEventListener('shown.bs.tab', event => {
           const targetId = event.target.getAttribute('data-bs-target');
           const hojaKey = targetId.replace('#tab-', '').toUpperCase();
+          const contenedor = document.getElementById(hojas[hojaKey]);
           const grid = gridInstances[hojaKey];
           
-          // Forzar re-render solo si el grid existe y tiene datos
-          if (grid && storedData[hojaKey] && storedColumns[hojaKey]) {
+          // Forzar re-render solo si el grid existe
+          if (grid && contenedor) {
             setTimeout(() => {
               try {
-                grid.forceRender();
+                // Verificar que el grid tenga datos antes de renderizar
+                if (storedData[hojaKey] && storedColumns[hojaKey]) {
+                  grid.updateConfig({ 
+                    data: storedData[hojaKey], 
+                    columns: storedColumns[hojaKey] 
+                  }).forceRender();
+                }
               } catch (e) {
-                console.warn("No se pudo forzar render:", e);
+                console.warn("Error al actualizar grid:", e);
               }
-            }, 150);
+            }, 200);
           }
         });
       });
