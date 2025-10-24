@@ -3,20 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <title>Visualización Bitácora</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
   <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
-    body { background: #f7f9fc; padding: 2rem; font-family: Arial, sans-serif; }
-    .tab-content { margin-top: 1rem; }
-    .gridjs-wrapper { overflow-x: auto; }
-    .grid-container { margin-bottom: 40px; padding: 10px; border: 1px solid #ddd; overflow-x: auto; position: relative; }
+    body {
+      background: #f7f9fc;
+      padding: 2rem;
+      font-family: Arial, sans-serif;
+    }
+    .tab-content {
+      margin-top: 1rem;
+    }
+    .gridjs-wrapper {
+      overflow-x: auto;
+    }
+    .grid-container {
+      margin-bottom: 40px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      min-height: 100px;
+      position: relative;
+    }
     .loading-overlay {
-      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.8); display: flex;
-      justify-content: center; align-items: center;
-      font-size: 1.2rem; font-weight: bold; z-index: 10;
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      z-index: 10;
+      display: none;
     }
   </style>
 </head>
@@ -32,15 +54,21 @@
   <div class="tab-content">
     <div class="tab-pane fade show active" id="tab-prd">
       <h3 class="mt-3">Entorno: PRD</h3>
-      <div id="grid-prd" class="grid-container"></div>
+      <div id="grid-prd" class="grid-container">
+        <div class="loading-overlay">Cargando...</div>
+      </div>
     </div>
     <div class="tab-pane fade" id="tab-qas">
       <h3 class="mt-3">Entorno: QAS</h3>
-      <div id="grid-qas" class="grid-container"></div>
+      <div id="grid-qas" class="grid-container">
+        <div class="loading-overlay">Cargando...</div>
+      </div>
     </div>
     <div class="tab-pane fade" id="tab-dev">
       <h3 class="mt-3">Entorno: DEV</h3>
-      <div id="grid-dev" class="grid-container"></div>
+      <div id="grid-dev" class="grid-container">
+        <div class="loading-overlay">Cargando...</div>
+      </div>
     </div>
   </div>
 
@@ -51,123 +79,105 @@
     const storedData = {};
     const storedColumns = {};
     const hojas = { PRD: 'grid-prd', QAS: 'grid-qas', DEV: 'grid-dev' };
-    const excelUrl = 'https://raw.githubusercontent.com/soporte123tat-code/Reporte-web/main/Reporte_2025-10-09.xlsx';
 
-    function showLoading(container, show = true) {
-      let overlay = container.querySelector('.loading-overlay');
-      if (show) {
-        if (!overlay) {
-          overlay = document.createElement('div');
-          overlay.className = 'loading-overlay';
-          overlay.innerText = '⏳ Cargando...';
-          container.appendChild(overlay);
-        }
-      } else {
-        if (overlay) overlay.remove();
-      }
+    function showLoading(container, show) {
+      const overlay = container.querySelector('.loading-overlay');
+      if (overlay) overlay.style.display = show ? 'flex' : 'none';
     }
 
-    async function loadExcel() {
-      try {
-        const res = await fetch(excelUrl);
-        if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-        const buffer = await res.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        console.log("✅ Hojas encontradas:", workbook.SheetNames);
+    function loadExcel() {
+      const excelUrl = 'https://raw.githubusercontent.com/soporte123tat-code/Reporte-web/main/Reporte_2025-10-09.xlsx';
+      Object.values(hojas).forEach(id => {
+        const c = document.getElementById(id);
+        if (c) showLoading(c, true);
+      });
 
-        for (const [hojaNombre, contenedorId] of Object.entries(hojas)) {
-          const contenedor = document.getElementById(contenedorId);
-          showLoading(contenedor, true);
+      fetch(excelUrl)
+        .then(res => {
+          if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+          return res.arrayBuffer();
+        })
+        .then(buffer => {
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          console.log("✅ Hojas encontradas:", workbook.SheetNames);
 
-          if (!workbook.SheetNames.includes(hojaNombre)) {
-            contenedor.innerHTML = `<div class="alert alert-warning">⚠️ Hoja "${hojaNombre}" no encontrada.</div>`;
+          for (const [hojaNombre, contenedorId] of Object.entries(hojas)) {
+            const contenedor = document.getElementById(contenedorId);
+            showLoading(contenedor, true);
+
+            if (!workbook.SheetNames.includes(hojaNombre)) {
+              contenedor.innerHTML = `<div class="alert alert-warning">Hoja "${hojaNombre}" no encontrada.</div>`;
+              showLoading(contenedor, false);
+              continue;
+            }
+
+            const hoja = workbook.Sheets[hojaNombre];
+            const data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
+
+            if (!data || data.length < 2) {
+              contenedor.innerHTML = `<div class="alert alert-info">Hoja "${hojaNombre}" sin datos útiles.</div>`;
+              showLoading(contenedor, false);
+              continue;
+            }
+
+            const headers = data[0];
+            const rows = data.slice(1).map(r => [...r, ...Array(headers.length - r.length).fill('')]);
+
+            const columns = headers.map((h, i) => ({ name: h || `Col_${i}`, id: `${hojaNombre}_col_${i}` }));
+
+            storedData[hojaNombre] = rows;
+            storedColumns[hojaNombre] = columns;
+
+            if (!gridInstances[hojaNombre]) {
+              contenedor.innerHTML = ''; // limpiar contenedor
+              const grid = new gridjs.Grid({
+                columns,
+                data: rows,
+                search: true,
+                pagination: { enabled: true, limit: 10 },
+                sort: true,
+                resizable: true,
+                language: {
+                  search: { placeholder: '🔍 Buscar...' },
+                  pagination: { previous: 'Anterior', next: 'Siguiente', showing: 'Mostrando', results: () => 'registros' }
+                }
+              });
+              grid.render(contenedor);
+              gridInstances[hojaNombre] = grid;
+            } else {
+              gridInstances[hojaNombre].updateConfig({ data: rows, columns }).forceRender();
+            }
+
             showLoading(contenedor, false);
-            continue;
           }
-
-          const hoja = workbook.Sheets[hojaNombre];
-          let data = XLSX.utils.sheet_to_json(hoja, { header: 1 });
-          if (!Array.isArray(data) || data.length < 2) {
-            contenedor.innerHTML = `<div class="alert alert-info">ℹ️ Hoja "${hojaNombre}" sin datos útiles.</div>`;
-            showLoading(contenedor, false);
-            continue;
-          }
-
-          const headers = data[0];
-          const rows = data.slice(1).map(row => {
-            const r = Array.from(row);
-            while (r.length < headers.length) r.push("");
-            return r;
-          });
-
-          const activeCols = headers.map((_, i) => !rows.every(r => !r[i]));
-          const filteredHeaders = [];
-          const filteredRows = rows.map(() => []);
-
-          headers.forEach((h, i) => {
-            if (activeCols[i]) {
-              filteredHeaders.push(h || `Col_${i}`);
-              rows.forEach((r, idx) => filteredRows[idx].push(r[i]));
+        })
+        .catch(err => {
+          console.error("❌ Error cargando Excel:", err);
+          Object.values(hojas).forEach(id => {
+            const c = document.getElementById(id);
+            if (c) {
+              c.innerHTML = `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel.</div>`;
+              showLoading(c, false);
             }
           });
-
-          const finalRows = filteredRows.map(r => {
-            while (r.length < filteredHeaders.length) r.push("");
-            return r.slice(0, filteredHeaders.length);
-          });
-
-          const columns = filteredHeaders.map((h, idx) => ({
-            name: h,
-            id: `${hojaNombre}_col_${idx}`,
-            formatter: cell => cell ?? ""
-          }));
-
-          storedData[hojaNombre] = finalRows;
-          storedColumns[hojaNombre] = columns;
-
-          if (!gridInstances[hojaNombre]) {
-            contenedor.innerHTML = ''; // limpiar contenedor antes de render
-            const grid = new gridjs.Grid({
-              columns,
-              data: finalRows,
-              search: true,
-              pagination: { enabled: true, limit: 10 },
-              sort: true,
-              resizable: true,
-              language: {
-                search: { placeholder: '🔍 Buscar...' },
-                pagination: { previous: 'Anterior', next: 'Siguiente', showing: 'Mostrando', results: () => 'registros' }
-              }
-            });
-            grid.render(contenedor);
-            gridInstances[hojaNombre] = grid;
-          } else {
-            // solo actualizar data si ya existe
-            gridInstances[hojaNombre].updateConfig({ data: finalRows, columns }).forceRender();
-          }
-
-          showLoading(contenedor, false);
-        }
-
-      } catch (err) {
-        console.error("❌ Error cargando Excel:", err);
-        Object.values(hojas).forEach(id => {
-          const c = document.getElementById(id);
-          if (c) c.innerHTML = `<div class="alert alert-danger">❌ No se pudo cargar el archivo Excel.</div>`;
         });
-      }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener("DOMContentLoaded", () => {
       loadExcel();
 
-      // Re-render al cambiar pestaña
-      document.querySelectorAll('.nav-link[data-bs-toggle="tab"]').forEach(btn => {
+      const tabButtons = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
+      tabButtons.forEach(btn => {
         btn.addEventListener('shown.bs.tab', event => {
-          const target = event.target.getAttribute('data-bs-target').replace('#tab-', '').toUpperCase();
-          const grid = gridInstances[target];
-          if (grid) {
-            grid.updateConfig({ data: storedData[target], columns: storedColumns[target] }).forceRender();
+          const targetId = event.target.getAttribute('data-bs-target'); // e.g. "#tab-qas"
+          const hojaKey = targetId.replace('#tab-', '').toUpperCase();
+          const grid = gridInstances[hojaKey];
+          const rows = storedData[hojaKey];
+          const columns = storedColumns[hojaKey];
+
+          if (grid && rows && columns) {
+            // actualizar solo si ya existe el grid
+            grid.updateConfig({ data: rows, columns }).forceRender();
           }
         });
       });
